@@ -1,0 +1,2 @@
+./testrun.sh: line 18: ./sbi.scm: No such file or directory
+./testrun.sh: line 20: ./sbi.scm: No such file or directory
