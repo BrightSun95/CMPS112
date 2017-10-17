@@ -47,10 +47,10 @@
 ;*****************************************************************
 ; print key label pairs
 ;*****************************************************************
-(define (show item)
-        (newline)
-        ;(display label) (display ":") (newline)
-        (display (car item) ) (newline))
+;(define (show label item)
+;        (newline)
+;        (display label) (display ":") (newline)
+;        (display (car item) ) (newline))
 
 ;*****************************************************************
 ; prints to stderr in the event of program failure...or something
@@ -85,7 +85,7 @@
 ;*****************************************************************
 (define (put-in-hash list hash)
   (when (not (null? list))
-    (let ((first (car list)))
+    (let ((first (caar list)))
       (when (not (symbol? first) )
           (hash-set! hash first list)
       )
@@ -113,22 +113,46 @@
     (lambda (pair)
       (symbol-put! (car pair) (cadr pair) *function-table*))
     '(
-      (print   ,(lambda (msg) (display msg) (newline) ) ) 
+      (dim   ,(lambda () () ))
+      (let   ,(lambda () () ))
+      (goto   ,(lambda () () ))
+      (if   ,(lambda () () ))
+      (print ,(lambda (x) (display x)(newline)))
+      (input   ,(lambda () () ))
+      (abs   ,(lambda () () ))
+      (acos   ,(lambda () () ))
+      (asin   ,(lambda () () ))
+      (atan   ,(lambda () () ))
+      (abs   ,(lambda () () ))
+      (ceil   ,(lambda () () ))
+      (cos   ,(lambda () () ))
+      (exp   ,(lambda () () ))
+      (floor   ,(lambda () () ))
+      (log   ,(lambda () () ))
+      (log10   ,(lambda () () ))
+      (log2   ,(lambda () () ))
+      (round   ,(lambda () () ))
+      (sin   ,(lambda () () ))
+      (sqrt   ,(lambda () () ))
+      (tan   ,(lambda () () ))
+      (trunc   ,(lambda () () ))
     )
 )
 
 
 ;*****************************************************************
-; The function evalexpr outlines how to evaluate a list recursively.
+; The function eval-expr outlines how to evaluate a list recursively.
 ;*****************************************************************
-(define (evalexpr expr)
+(define (eval-expr expr)
    (cond ((number? expr) expr)
-         ;((symbol? expr) (hash-ref *function-table* expr #f))
-         ((pair? expr)   (apply (hash-ref *function-table* (car expr))
-                                (map evalexpr (cdr expr))
-                         )
-         )
-         (else #f))
+          ((string? expr) (list->string expr))
+          ((symbol? expr) (hash-ref *function-table* expr #f))
+          ((pair? expr)   (apply (hash-ref *function-table* (car expr))
+                                  (map eval-expr (cdr expr))
+                          )
+          )
+          (else #f)
+    )
 )
 
 ;*****************************************************************
@@ -137,16 +161,67 @@
 ;(hash-for-each *label-table*
 ;              (lambda (key value) (show key value)))
 
-
+;*****************************************************************
+; print key=value
+;*****************************************************************
+(define (show key value)
+    (display key)
+    (display " = ")
+    (display value)
+    (newline))
 
 ;*****************************************************************
-; checks type of value and prints it to stdout
+;
 ;*****************************************************************
-(define (check-stmt value) 
-  (cond
-   [(pair? value) (display "list")]
-   [(list? value) (display "pair")]
-   [else (display "not list or pair")])
+(define (atom? x)
+    (and (not (pair? x))
+        (not (null? x))))
+
+;*****************************************************************
+; evaluate a line from program
+;*****************************************************************
+(define (eval-line program line_num)
+    ; is the line denoted by line_num in the program?
+    (when (> (length program) line_num)
+  
+        (let ((line (list-ref program line_num)))
+            
+            (cond
+                ; (Linenr Label Statement)
+                ((= (length line) 3)
+                    ;(printf "line length is 3: ~s~n" line) 
+                    (set! line (cddr line))
+                    (display "3: ")(display line)(newline))
+                    ;(execute-line (car line) program line_num))
+
+                ;; Linenr Label|Statement
+                ((and (= (length line) 2) (list? (cadr line)))
+                  
+                  (set! line (cdr line))
+                  (display "2: ")(display (cdar line) ) (newline)
+                  (eval-expr (car line) )
+                )                
+                ;; otherwise evaluate next line
+                (else
+                  (display "1: ")(display (length line) )(newline)
+                  (eval-line program (+ line_num 1)))                
+             )
+         )
+     )
+)
+
+;*****************************************************************
+; reads program (a proper list) and puts labels into *label-table*
+;*****************************************************************
+(define (hash-labels program)
+    (map  (lambda (line)
+            
+            (when (not (null? (cdr line)))
+              (when (atom? (cadr line))
+                ;(display(cddr line))(newline)
+                (hash-set! *label-table* (cadr line)  line)))
+          ) program
+    )
 )
 
 ;*****************************************************************
@@ -160,9 +235,8 @@
                   (sbprogfile (car arglist))
                   (program (readlist-from-inputfile sbprogfile))
                 )
-            (put-in-hash program *label-table*); initialize var-table
-            (hash-for-each *label-table*
-              (lambda (key value) (show value)))
+            (hash-labels program)
+            (eval-line program 0)
           )
         )
     )

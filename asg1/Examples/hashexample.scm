@@ -25,6 +25,7 @@
 (for-each
     (lambda (item) (hash-set! ht (car item) (cadr item)))
     `((var 34)
+      (print ,(lambda (x) (display x)(newline) ))
       (+ ,(lambda (x y) (+ x y)))
       (- ,(lambda (x y) (- x y)))
       (* ,*)
@@ -42,20 +43,20 @@
 ;; the last argument #f causes hash-ref to return it
 ;; rather than crashing the program on failure to find.
 ;;
-(show "var" (hash-ref ht 'var #f))
+;(show "var" (hash-ref ht 'var #f))
 
 ;;
 ;; Set a vector element, print it, and the whole vector.
 ;;
 (vector-set! (hash-ref ht 'vec #f) 5 3.1415926535)
-(show "vec[5]" (vector-ref (hash-ref ht 'vec) 5))
-(show "vec" (hash-ref ht 'vec #f))
+;(show "vec[5]" (vector-ref (hash-ref ht 'vec) 5))
+;(show "vec" (hash-ref ht 'vec #f))
 
 ;;
 ;; A couple more examples.
 ;;
-(show "(+ 3 4)" (apply (hash-ref ht '+ #f) '(3 4)))
-(show "not found" (hash-ref ht 'foo #f))
+;(show "(+ 3 4)" (apply (hash-ref ht '+ #f) '(3 4)))
+;(show "not found" (hash-ref ht 'foo #f))
 
 ;;
 ;; The function evalexpr outlines how to evaluate a list
@@ -64,6 +65,7 @@
 (define (evalexpr expr)
    (cond ((number? expr) expr)
          ((symbol? expr) (hash-ref ht expr #f))
+         ((string? expr) expr)
          ((pair? expr)   (apply (hash-ref ht (car expr))
                                 (map evalexpr (cdr expr))))
          (else #f))
@@ -73,11 +75,12 @@
 ;; Now print out the value of several expressions.
 ;;
 (for-each
-    (lambda (expr) (show expr (evalexpr expr)))
-    '( (* var 7)
-       (- 3 4)
-       (+ (* var 7) (- 3 4))
-))
+    (lambda (expr) (evalexpr expr))
+    '( (print var)
+       (print "hullo" )
+
+      )
+)
 
 ;;
 ;; Just to verify that we got all the way.
