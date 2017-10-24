@@ -2,3 +2,6 @@ exams/
 asg1/Examples
 asg1/RCS
 asg1/sources
+*.log
+asgn
+cmps112-wm

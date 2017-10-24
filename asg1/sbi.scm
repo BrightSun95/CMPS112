@@ -44,6 +44,18 @@
         )
         (path->string basepath))
 )
+
+;*****************************************************************
+; checks type of value and prints it to stdout
+;*****************************************************************
+(define (check-stmt value) 
+  (cond
+   [(pair? value) (display "pair")]
+   [(list? value) (display "list")]
+   [(string? value) (display "string")]
+   [else (display "not list or pair")])
+)
+
 ;*****************************************************************
 ; print key label pairs
 ;*****************************************************************
@@ -86,7 +98,7 @@
 (define (put-in-hash list hash)
   (when (not (null? list))
     (let ((first (caar list)))
-      (when (not (symbol? first) )
+      (when (not (atom? first) )
           (hash-set! hash first list)
       )
     )
@@ -113,43 +125,59 @@
     (lambda (pair)
       (symbol-put! (car pair) (cadr pair) *function-table*))
     '(
-      (dim   ,(lambda () () ))
-      (let   ,(lambda () () ))
-      (goto   ,(lambda () () ))
-      (if   ,(lambda () () ))
-      (print ,(lambda (x) (display x)(newline)))
-      (input   ,(lambda () () ))
-      (abs   ,(lambda () () ))
-      (acos   ,(lambda () () ))
-      (asin   ,(lambda () () ))
-      (atan   ,(lambda () () ))
-      (abs   ,(lambda () () ))
-      (ceil   ,(lambda () () ))
-      (cos   ,(lambda () () ))
-      (exp   ,(lambda () () ))
-      (floor   ,(lambda () () ))
-      (log   ,(lambda () () ))
-      (log10   ,(lambda () () ))
-      (log2   ,(lambda () () ))
-      (round   ,(lambda () () ))
-      (sin   ,(lambda () () ))
-      (sqrt   ,(lambda () () ))
-      (tan   ,(lambda () () ))
-      (trunc   ,(lambda () () ))
+      (dim      ,(dim))
+      (let      ,(let))
+      (goto     ,(goto))
+      (if       ,(if))
+      (print    ,sbir-print)
+      (input    ,(input))
+      (abs      ,(abs))
+      (acos     ,(acos))
+      (asin     ,(asin))
+      (atan     ,(atan))
+      (abs      ,(abs))
+      (ceil     ,(ceil))
+      (cos      ,(cos))
+      (exp      ,(exp))
+      (floor    ,(floor))
+      (log      ,(log))
+      (log10    ,(log10))
+      (log2     ,(log2))
+      (round    ,(round))
+      (sin      ,(sin))
+      (sqrt     ,(sqrt))
+      (tan      ,(tan))
+      (trunc    ,(trunc))
     )
 )
 
+(define (sbir-print expr)
+  (display "print!!!")
+  (define (printt r_expr)
+    (cond
+      ((null? r_expr) (newline))
+      (else (display (car r_expr) )
+        (printt (cdr r_expr))
+      )
+    )
+  )
+  (printt expr)
+)
+
+(define (function? expr)
+  (hash-has-key? *function-table* expr)
+)
 
 ;*****************************************************************
 ; The function eval-expr outlines how to evaluate a list recursively.
 ;*****************************************************************
 (define (eval-expr expr)
-   (cond ((number? expr) expr)
-          ((string? expr) (list->string expr))
-          ((symbol? expr) (hash-ref *function-table* expr #f))
-          ((pair? expr)   (apply (hash-ref *function-table* (car expr))
-                                  (map eval-expr (cdr expr))
-                          )
+   (cond  ((string? expr) expr)
+          ((number? expr) expr)
+          ((symbol? expr) (hash-ref *var-table* expr #f))
+          ((pair? expr) (apply (hash-ref *function-table* (car expr))
+                                      (map eval-expr (cdr expr) )
+                        )
           )
           (else #f)
     )
@@ -191,20 +219,22 @@
                 ((= (length line) 3)
                     ;(printf "line length is 3: ~s~n" line) 
                     (set! line (cddr line))
-                    (display "3: ")(display line)(newline))
+                    (display "3: ")(display (cddr line) )(newline)
                     ;(execute-line (car line) program line_num))
+                )
 
                 ;; Linenr Label|Statement
                 ((and (= (length line) 2) (list? (cadr line)))
-                  
                   (set! line (cdr line))
-                  (display "2: ")(display (cdar line) ) (newline)
+                  (display "2: ")(display (car line) )(newline)
                   (eval-expr (car line) )
-                )                
+                )
+
                 ;; otherwise evaluate next line
                 (else
-                  (display "1: ")(display (length line) )(newline)
-                  (eval-line program (+ line_num 1)))                
+                  (display "1: ") (display line)(newline)
+                  (eval-line program (+ line_num 1))
+                )
              )
          )
      )
@@ -215,10 +245,8 @@
 ;*****************************************************************
 (define (hash-labels program)
     (map  (lambda (line)
-            
             (when (not (null? (cdr line)))
               (when (atom? (cadr line))
-                ;(display(cddr line))(newline)
                 (hash-set! *label-table* (cadr line)  line)))
           ) program
     )
