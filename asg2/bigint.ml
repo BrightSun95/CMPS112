@@ -60,6 +60,13 @@ module Bigint = struct
         then Bigint (neg1, add' value1 value2 0)
         else zero
 
+(*
+    let cmp list1 list2 carry = match (value1, value2, carry) with
+        | list1, [], 0          -> 1
+        | [], list2, 0          -> 0
+        | list1, [], carry      -> 
+*)
+
     let sub = add
 
     let mul = add
